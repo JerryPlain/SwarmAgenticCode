@@ -1,0 +1,12 @@
+
+*.pyc
+utils/.DS_Store
+database/
+annotation/.DS_Store
+.DS_Store
+!database/test_ref_info.jsonl
+!database/train_ref_info.jsonl
+!database/validation_ref_info.jsonl
+zzz/test
+evaluation/*.jsonl
+zzz/results

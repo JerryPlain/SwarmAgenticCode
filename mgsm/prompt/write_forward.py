@@ -1,0 +1,150 @@
+import json
+from logger import log
+from prompt.base import FUNCTION_DESCRIPTION
+from langchain_core.prompts import PromptTemplate
+
+# Prompt template for the forward function. It creates a text represents a callable function to organize available roles to solve a specific task.
+# Given function description, roles, workflow.
+# Output the function.
+
+BASE = """You are an expert python programmer. 
+You are tasked with writing a function to organize available roles to solve a specific task.
+{function_description}
+
+You are provided with following available roles. Each role can solve a subtask of the complex task:
+
+<available roles>
+{roles}
+</available roles>
+
+You are also given the workflow of these roles: 
+
+<workflow>
+{workflow}
+</workflow>
+
+Your job is to design the function that represents how the roles will work together to solve the task. 
+Use these guidelines when generating the function:
+- ALWAYS use **role_response = team.call(role_name: str, inputs: List, output: str)** to call a role. This will give inputs and required output instruction to the role and return the role's response. 
+    * role_name: The name of the role to call in this step. You can only call roles in the current team. MUST NOT call an unexisting role from available roles.
+    * inputs: List of the output produced by one or more roles in previous steps. 
+    * output: What output expected from the role in this step. Must be enclosed in double quotation marks ("output").
+- Use the provided workflow instruction as a guide for designing the function's structure.
+- Create a well-organized function that represents how the roles will work together to solve the task efficiently. 
+- MUST not make any assumptions in the code.
+- Ensure that every variable declared in the function is utilized, with no unused or redundant variables.
+- Ensure the created function complete and correct to avoid runtime failures.
+
+# Examples:
+Here is an examples to help you design the function:
+
+<examples>
+{examples}
+</examples>
+"""
+
+
+schema = {
+    "title": "forward_function",
+    "description": "Forward function of agent system to represent the workflow.",
+    "type": "object",
+    "properties": {
+        "code": {
+            "type": "string",
+            "description": '''Design the function in Python code. You must write a COMPLETE CODE in "code": Your code will be part of the entire project, so please implement complete, reliable, reusable code snippets. MUST response in format "def forward(team):\n{Your code here}\nreturn answer".''',
+        },
+    },
+    "required": ["code"],
+}
+
+
+def get_init_archive():
+    return []
+
+
+def build_forward(llm, logger, roles, workflow):
+    prompt = PromptTemplate(
+        input_variables=["function_description", "roles", "workflow", "examples"],
+        template=BASE,
+    )
+    chain = prompt | llm.with_structured_output(schema)
+    input={
+        "function_description": FUNCTION_DESCRIPTION,
+        "roles": roles,
+        "workflow": json.dumps(workflow, indent=4), 
+        "examples": EXAMPLES
+    }
+    res = chain.invoke(input)
+    log(logger, 'Write Forward', prompt.format(**input), res['code'])
+    return res['code']
+
+
+EXAMPLES = """
+Available Roles:
+{
+    "Name": "Story Planner",
+    "Responsibility": "Develop a coherent structure for the character backstory and plot progression.",
+    "Policy": "Ensure character backgrounds align with their roles and motivations within the narrative.",
+}
+{
+    "Name": "Character Designer",
+    "Responsibility": "Create unique, well-rounded characters that fit into the story.",
+    "Policy": "Design distinct personalities and relationships that enhance the narrative.",
+}
+{
+    "Name": "Setting Designer",
+    "Responsibility": "Craft an immersive world that supports character growth and plot development.",
+    "Policy": "Ensure the setting reflects the characters' backgrounds and cultures.",
+}
+{
+    "Name": "Script Writer",
+    "Responsibility": "Synthesize all elements into a cohesive and engaging narrative.",
+    "Policy": "Maintain a smooth narrative flow that highlights character growth and interactions.",
+}
+
+Workflow:
+[
+  {
+    "Step": 1,
+    "Role": "Story Planner",
+    "Input": "",
+    "Output": "detailed story outline"
+  },
+  {
+    "Step": 2,
+    "Role": "Character Designer",
+    "Input": "detailed story outline",
+    "Output": "designed characters"
+  },
+  {
+    "Step": 3,
+    "Role": "Setting Designer",
+    "Input": "detailed story outline",
+    "Output": "detailed character setting"
+  },
+  {
+    "Step": 4,
+    "Role": "Script Writer",
+    "Input": "detailed story outline, designed characters, detailed character setting",
+    "Output": "completed script"
+  },
+]
+
+Answer:
+'''def forward(team):
+    # Step 1: Story Planner creates a detailed story outline.
+    story_outline = team.call('Story Planner', [], "detailed story outline")
+    
+    # Step 2: Character Designer creates characters based on the story outline generated by Story Planner.
+    designed_characters = team.call('Character Designer', [story_outline], "designed characters")
+        
+    # Step 3: Setting Designer generates a detailed setting for each character based on the story outline generated by Story Planner
+    detailed_character_setting = team.call('Setting Designer', [story_outline], "detailed character setting")
+
+    # Step 4: Script Writer writes a script based on the story outline, designed characters, and detailed character setting.
+    completed_script = team.call('Script Writer', [story_outline, designed_characters, detailed_character_setting], "completed script")
+
+    # Step 5: Return the final answer, which is the completed script
+    return completed_script
+'''
+"""

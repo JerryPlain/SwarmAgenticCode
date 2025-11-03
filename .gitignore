@@ -129,6 +129,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
 .venv
 env/
 venv/
@@ -165,7 +166,7 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+.idea/
 
 # Abstra
 # Abstra is an AI-powered process automation framework.
@@ -178,7 +179,7 @@ cython_debug/
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the enitre vscode folder
-# .vscode/
+.vscode/
 
 # Ruff stuff:
 .ruff_cache/
@@ -192,3 +193,35 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Project-specific files and directories
+# Logs and results
+logs/
+results/
+
+# PSO checkpoints and intermediate data
+save.jsonl
+
+# Evaluation outputs
+evaluation/*.jsonl
+zzz/
+
+# Temporary files
+tmp/
+*.tmp
+.tmp/
+
+# Database files (keep only what's needed)
+database/
+!database/test_ref_info.jsonl
+!database/train_ref_info.jsonl
+!database/validation_ref_info.jsonl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE settings (vim swap files)
+*.swp
+*.swo
+*~
